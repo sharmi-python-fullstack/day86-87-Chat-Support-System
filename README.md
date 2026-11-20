@@ -74,12 +74,21 @@ one year on the app hostname; HSTS subdomains and preload remain disabled.
    URL**. Choose a plan appropriate for your data and uptime needs.
 3. In the Render Dashboard, create a **Blueprint Instance** and select your
    repository. When prompted, set `DATABASE_URL` to the internal URL and
-   `GEMINI_API_KEY` to your Gemini key. Render generates `DJANGO_SECRET_KEY`.
-4. Deploy. The build script installs dependencies, collects static files, and
-   applies migrations.
-5. After deployment, open the Render Shell and run
-   `python manage.py createsuperuser`. Sign in to `/admin/` and create staff
-   accounts and their `StaffProfile` records.
+   `GEMINI_API_KEY` to your Gemini key. Also set
+   `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_EMAIL`, and
+   `DJANGO_SUPERUSER_PASSWORD` to bootstrap the first admin. Render generates
+   `DJANGO_SECRET_KEY`.
+4. Deploy. The build script installs dependencies, collects static files,
+   applies migrations, and creates the admin account if it does not already
+   exist.
+5. Sign in to `/admin/` with those credentials. Create staff accounts and
+   their `StaffProfile` records there. After the first successful build, remove
+   the three `DJANGO_SUPERUSER_*` variables from the Render environment; the
+   created account remains in PostgreSQL.
+
+If the service has already been deployed, add the three `DJANGO_SUPERUSER_*`
+variables in its Render **Environment** settings and trigger a new deploy. No
+Render Shell is needed.
 
 For a custom domain, add its hostname to `DJANGO_ALLOWED_HOSTS` and its HTTPS
 origin to `DJANGO_CSRF_TRUSTED_ORIGINS` in the Render service environment.

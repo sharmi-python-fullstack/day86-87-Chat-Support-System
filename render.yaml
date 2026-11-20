@@ -27,3 +27,9 @@ services:
         sync: false
       - key: GEMINI_MODEL
         value: "gemini-3.8-flash"
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false

@@ -1,8 +1,11 @@
+import os
 from unittest.mock import AsyncMock, Mock, patch
 
 import requests
 from asgiref.sync import async_to_sync
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
@@ -28,6 +31,46 @@ class StaffTicketTests(TestCase):
             subject="Cannot sign in",
             description="The sign-in page shows an error.",
         )
+
+    def test_bootstrap_superuser_skips_without_credentials(self):
+        credentials = {
+            "DJANGO_SUPERUSER_USERNAME": "",
+            "DJANGO_SUPERUSER_EMAIL": "",
+            "DJANGO_SUPERUSER_PASSWORD": "",
+        }
+        with patch.dict(os.environ, credentials):
+            call_command("bootstrap_superuser")
+
+        self.assertFalse(User.objects.filter(is_superuser=True).exists())
+
+    def test_bootstrap_superuser_creates_admin_idempotently(self):
+        credentials = {
+            "DJANGO_SUPERUSER_USERNAME": "site-admin",
+            "DJANGO_SUPERUSER_EMAIL": "site-admin@example.com",
+            "DJANGO_SUPERUSER_PASSWORD": "Very-Long-Unique-Secret-2026!",
+        }
+        with patch.dict(os.environ, credentials):
+            call_command("bootstrap_superuser")
+            call_command("bootstrap_superuser")
+
+        admin = User.objects.get(username="site-admin")
+        self.assertTrue(admin.is_superuser)
+        self.assertTrue(admin.is_staff)
+        self.assertTrue(admin.check_password(credentials["DJANGO_SUPERUSER_PASSWORD"]))
+        self.assertEqual(User.objects.filter(username="site-admin").count(), 1)
+
+    def test_bootstrap_superuser_does_not_elevate_existing_client(self):
+        credentials = {
+            "DJANGO_SUPERUSER_USERNAME": self.customer.username,
+            "DJANGO_SUPERUSER_EMAIL": "customer@example.com",
+            "DJANGO_SUPERUSER_PASSWORD": "Very-Long-Unique-Secret-2026!",
+        }
+        with patch.dict(os.environ, credentials):
+            with self.assertRaises(CommandError):
+                call_command("bootstrap_superuser")
+
+        self.customer.refresh_from_db()
+        self.assertFalse(self.customer.is_superuser)
 
     def test_staff_login_accepts_staff_and_redirects_to_queue(self):
         response = self.client.post(
