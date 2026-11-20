@@ -1,0 +1,11 @@
+{% extends "support/base.html" %}
+{% block title %}Create a ticket | Support Desk{% endblock %}
+{% block content %}
+  <h1>How can we help?</h1>
+  <p>Describe the issue and our support team will follow up here.</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Submit ticket</button>
+  </form>
+{% endblock %}

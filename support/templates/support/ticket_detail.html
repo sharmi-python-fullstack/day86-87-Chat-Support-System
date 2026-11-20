@@ -1,0 +1,62 @@
+{% extends "support/base.html" %}
+{% block title %}{{ ticket.subject }} | Support Desk{% endblock %}
+{% block content %}
+  <h1>{{ ticket.subject }}</h1>
+  <p class="meta">Status: {{ ticket.status }} · Priority: {{ ticket.priority }}</p>
+  <p>{{ ticket.description|linebreaksbr }}</p>
+  {% if ticket.assigned_to %}
+    <p class="meta">Assigned to {{ ticket.assigned_to.user.get_username }} ({{ ticket.assigned_to.department }})</p>
+  {% else %}
+    <p class="meta">Waiting for a support agent to claim this ticket.</p>
+  {% endif %}
+
+  <h2>Conversation</h2>
+  {% for message in ticket.messages.all %}
+    <article class="message">
+      <strong>{{ message.user.get_username }}</strong>
+      <span class="meta">{{ message.created_at }}</span>
+      <p>{{ message.content|linebreaksbr }}</p>
+    </article>
+  {% empty %}
+    <p>No messages yet.</p>
+  {% endfor %}
+
+  <h2>Send a message</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Send message</button>
+  </form>
+
+  <section aria-labelledby="faq-title" style="margin-top: 2rem">
+    <h2 id="faq-title">Ask the FAQ assistant</h2>
+    <form id="faq-form">
+      {% csrf_token %}
+      <label for="faq-question">Question</label>
+      <textarea id="faq-question" name="question" rows="2" required></textarea>
+      <button type="submit">Ask</button>
+    </form>
+    <p id="faq-answer" aria-live="polite"></p>
+  </section>
+  <script>
+    document.getElementById("faq-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const output = document.getElementById("faq-answer");
+      output.textContent = "Looking for an answer...";
+      try {
+        const response = await fetch("{% url 'get_faq_answer' %}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": event.currentTarget.querySelector("[name=csrfmiddlewaretoken]").value
+          },
+          body: JSON.stringify({question: document.getElementById("faq-question").value})
+        });
+        const result = await response.json();
+        output.textContent = response.ok ? result.answer : result.error;
+      } catch {
+        output.textContent = "The FAQ service is temporarily unavailable.";
+      }
+    });
+  </script>
+{% endblock %}

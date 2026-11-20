@@ -1,0 +1,15 @@
+{% extends "support/base.html" %}
+{% block title %}My tickets | Support Desk{% endblock %}
+{% block content %}
+  <h1>My tickets</h1>
+  <p class="meta">Department: {{ staff_profile.department }}</p>
+  {% for ticket in tickets %}
+    <article class="ticket">
+      <h2><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.subject }}</a></h2>
+      <p class="meta">From {{ ticket.user.get_username }} · {{ ticket.status }} · {{ ticket.priority }} priority</p>
+      <p>{{ ticket.description|truncatewords:35 }}</p>
+    </article>
+  {% empty %}
+    <p>You have no assigned tickets.</p>
+  {% endfor %}
+{% endblock %}

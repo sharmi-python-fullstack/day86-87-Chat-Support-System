@@ -1,0 +1,16 @@
+{% extends "support/base.html" %}
+{% block title %}{{ login_type }} sign in | Support Desk{% endblock %}
+{% block content %}
+  <h1>{{ login_type }} sign in</h1>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+    <button type="submit">{{ login_type }} sign in</button>
+  </form>
+  {% if login_type == "Staff" %}
+    <p class="meta">Client account? <a href="{% url 'login' %}">Client sign in</a>.</p>
+  {% else %}
+    <p class="meta">Staff member? <a href="{% url 'staff_login' %}">Staff sign in</a>.</p>
+  {% endif %}
+{% endblock %}
